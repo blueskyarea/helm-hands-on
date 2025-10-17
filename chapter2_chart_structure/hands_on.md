@@ -107,6 +107,7 @@ helm upgrade mychart ./mychart -f custom-values.yaml
 ## Step 7. 結果を確認
 ```bash
 kubectl get pods -o wide
+# -> 新しいPodが起動するのを確認
 kubectl describe pod <POD_NAME>
 ```
 コンテナイメージタグが変更されていれば成功です。
@@ -128,10 +129,10 @@ helm uninstall mychart
 ## 補足図：Helm Chart の構造
 ```mermaid
 flowchart TD
-  A[Chart.yaml\n(メタデータ)] --> R[Chart 全体]
-  B[values.yaml\n(変数定義)] --> R
-  C[templates/*.yaml\n(K8s マニフェストの雛形)] --> R
-  D[chcharts/\n(Subchart)] --> R
+  A["Chart.yaml<br>(メタデータ)"] --> R[Chart 全体]
+  B["values.yamll<br>(変数定義)"] --> R
+  C["templates/*.yamll<br>(K8s マニフェストの雛形)"] --> R
+  D["chcharts/l<br>(Subchart)"] --> R
   R --> E[helm install mychart]
   E --> F[Rendered YAML]
   F --> G[Kubernetes API Server]
