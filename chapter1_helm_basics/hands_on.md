@@ -46,6 +46,14 @@ kubectl get svc my-nginx
 NAME      	NAMESPACE	REVISION	STATUS  	CHART       	APP VERSION
 my-nginx  	default  	1       	deployed	nginx-15.5.2	1.27.0
 ```
+```bash
+NAME                        READY   STATUS    RESTARTS   AGE
+my-nginx-6bccb98799-q4q8j   1/1     Running   0          66s
+```
+```bash
+NAME       TYPE           CLUSTER-IP    EXTERNAL-IP   PORT(S)                      AGE
+my-nginx   LoadBalancer   XX.XX.XX.XX   <pending>     80:30619/TCP,443:31229/TCP   49s
+```
 
 ## Step 2. 状態を確認する
 Helm では「Release」単位で状態を管理します。
@@ -58,7 +66,6 @@ helm get all my-nginx
 主要な確認ポイント：
 - STATUS: deployed
 - REVISION: 1
-- Notes セクションにポートフォワード例が表示されること
 
 ## Step 3. values.yaml を使ってカスタマイズ
 まず、デフォルト値を取得します。
@@ -83,6 +90,14 @@ helm status my-nginx
 kubectl get svc my-nginx
 ```
 
+主要な確認ポイント：
+- STATUS: deployed
+- REVISION: 2
+```bash
+NAME       TYPE       CLUSTER-IP    EXTERNAL-IP   PORT(S)                      AGE
+my-nginx   NodePort   XX.XX.XX.XX   <pending>     80:30619/TCP,443:31229/TCP   49s
+```
+
 ## Step 4. Rollback を試す
 変更前の状態に戻したい場合は、helm rollback を使用します。
 ### 履歴を確認
@@ -98,7 +113,16 @@ helm rollback my-nginx 1
 ### 状態再確認
 ```bash
 helm status my-nginx
+kubectl get svc my-nginx
 ```
+主要な確認ポイント：
+- STATUS: deployed
+- REVISION: 3
+```bash
+NAME       TYPE           CLUSTER-IP    EXTERNAL-IP   PORT(S)                      AGE
+my-nginx   LoadBalancer   XX.XX.XX.XX   <pending>     80:30619/TCP,443:31229/TCP   49s
+```
+
 
 ✅ Helm は自動的に revision 番号をインクリメントして履歴を保持します。
 Rollback 後も「前の構成に戻す」だけであり、履歴は残り続けます。
@@ -128,9 +152,9 @@ kubectl get all
 flowchart LR
   A[helm install my-nginx bitnami/nginx] --> B[Release #1 作成]
   B --> C[helm upgrade my-nginx -f values.yaml]
-  C --> D[Release #2 作成 (revision 2)]
+  C --> D["Release #2 作成 (revision 2)"]
   D --> E[helm history my-nginx]
   E --> F[helm rollback my-nginx 1]
-  F --> G[Release #3 作成 (復元)]
+  F --> G["Release #3 作成 (復元)"]
   G --> H[helm uninstall my-nginx]
 ```
