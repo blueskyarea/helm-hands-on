@@ -46,7 +46,7 @@ bitnami/nginx      	15.5.2       	1.27.0     	NGINX Open Source
 ```
 
 ## Step 2. Artifact Hub から Chart を探す
-Artifact Hub（https://artifacthub.io）は、
+Artifact Hub https://artifacthub.io は、
 公式の Helm Chart カタログです。
 
 コマンドでも検索可能です：
@@ -109,7 +109,18 @@ index.yaml には Chart の名前・バージョン・URL 情報が含まれま�
 
 ## Step 6. ローカルリポジトリとして登録・利用
 ```bash
-helm repo add localrepo file://$(pwd)
+# 1) リポジトリ用ディレクトリに移動
+cd myrepo
+
+# 2) index.yaml を作り直し（URLはあなたの環境に合わせて）
+helm repo index . --url http://127.0.0.1:8081
+
+# 3) 簡易HTTPサーバを起動（別ターミナルで実行）
+python3 -m http.server 8081
+```
+別ターミナルで以下を実行：
+```bash
+helm repo add localrepo http://127.0.0.1:8081
 helm repo update
 ```
 
@@ -125,52 +136,7 @@ helm install myapp localrepo/mychart
 ✅ file:// スキームを使えばローカルリポジトリとして扱えます。
 CI/CD 用や社内リポジトリにも応用できます。
 
-## Step 7. 依存関係（Subchart）の管理を体験
-mychart/Chart.yaml に依存関係を定義します。
-```yaml
-dependencies:
-  - name: redis
-    version: 17.9.0
-    repository: https://charts.bitnami.com/bitnami
-```
-
-依存関係を取得：
-```bash
-helm dependency update mychart
-```
-
-結果：
-```bash
-Saving 1 charts
-Downloading redis from repo https://charts.bitnami.com/bitnami
-```
-
-確認：
-```bash
-mychart/charts/redis-17.9.0.tgz
-```
-
-再インストール：
-```bash
-helm install myapp ./mychart
-```
-
-mychart（親）＋ redis（子）が一緒にデプロイされます。
-
-## Step 8. Chart の署名と検証（セキュリティ）
-Helm は Chart の改ざんを防ぐため、署名と検証機能を持っています。
-### 署名付きパッケージ化
-```bash
-helm package ./mychart --sign --key "Helm Key" --keyring ~/.gnupg/pubring.gpg
-```
-
-### 検証
-```bash
-helm verify mychart-0.1.0.tgz
-```
-helm verify により、署名が一致すれば「OK」、不一致なら「FAILED」と表示されます。
-
-## Step 9. クリーンアップ
+## Step 8. クリーンアップ
 ```bash
 helm uninstall myapp
 helm repo remove localrepo
