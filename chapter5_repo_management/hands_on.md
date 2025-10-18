@@ -136,7 +136,7 @@ helm install myapp localrepo/mychart
 ✅ file:// スキームを使えばローカルリポジトリとして扱えます。
 CI/CD 用や社内リポジトリにも応用できます。
 
-## Step 8. クリーンアップ
+## Step 7. クリーンアップ
 ```bash
 helm uninstall myapp
 helm repo remove localrepo
