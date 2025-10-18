@@ -38,6 +38,13 @@ helm status myapp
 NAME  	NAMESPACE	REVISION	STATUS  	CHART      	APP VERSION
 myapp	default  	1       	deployed	mychart-0.1.0	1.0
 ```
+```bash
+NAME: myapp
+LAST DEPLOYED: Sat Oct 18 09:11:43 2025
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+```
 
 Helm はこのとき、テンプレートを展開（render）して Kubernetes API に送信し、
 結果を Release（Secretリソース） としてクラスタに保存します。
@@ -81,10 +88,15 @@ kubectl get pods
 ```
 
 出力例：
-```yaml
+```bash
 REVISION	UPDATED                 	STATUS  	CHART      	DESCRIPTION
 1        	2025-10-16 20:00:00 JST	deployed	mychart-0.1.0	Install complete
 2        	2025-10-16 20:02:00 JST	deployed	mychart-0.1.0	Upgrade complete
+```
+```bash
+NAME                             READY   STATUS    RESTARTS   AGE
+myapp-mychart-58f559b6d5-cg2l7   1/1     Running   0          31s
+myapp-mychart-58f559b6d5-sx5mj   1/1     Running   0          7m6s
 ```
 
 ## Step 4. helm rollback で以前の状態に戻す
@@ -152,15 +164,29 @@ helm install myapp ./mychart
 ```
 
 redis サブチャートも自動的にデプロイされます。
+```bash
+helm template mychart | grep -A5 "mychart/charts/redis"
+```
+
+結果：
+redis用に必要なテンプレートが表示されます
+```bash
+# Source: mychart/charts/redis/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+automountServiceAccountToken: true
+metadata:
+  name: release-name-redis
+(omit)
+```
 
 ## Step 7. helm get で内部構造を確認
 ```bash
 helm get all myapp
 ```
 表示内容：
-- values: 現在の設定値
-- manifest: Kubernetes に送られた YAML
-- notes: Chart の説明文
+- このReleaseで管理されるリソース情報  
+kind: Deployment、kind: Pod、kind: Service、kind: ConfigMap、kind: Secretなど
 
 ## まとめ
 | コマンド               | 役割                           |
