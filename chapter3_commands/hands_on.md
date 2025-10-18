@@ -188,6 +188,11 @@ helm get all myapp
 - このReleaseで管理されるリソース情報  
 kind: Deployment、kind: Pod、kind: Service、kind: ConfigMap、kind: Secretなど
 
+片付け
+```bash
+helm uninstall myapp
+```
+
 ## まとめ
 | コマンド               | 役割                           |
 | ---------------------- | ------------------------------ |

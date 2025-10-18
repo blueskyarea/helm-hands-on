@@ -58,7 +58,7 @@ helm install myapp ./mychart -f mychart/values-dev.yaml
 確認：
 ```bash
 helm get values myapp
-kubectl get svc myapp
+kubectl get svc myapp-mychart
 ```
 
 出力例：
@@ -78,15 +78,18 @@ helm upgrade myapp ./mychart -f mychart/values-stg.yaml
 
 確認：
 ```bash
-helm status myapp
-kubectl get pods
+helm get values myapp
+kubectl get svc myapp-mychart
 ```
 
 出力例：
 ```yaml
-replicas: 2
-image: nginx:1.27.1-stg
-service type: ClusterIP
+USER-SUPPLIED VALUES:
+image:
+  tag: 1.27.1-stg
+replicaCount: 2
+service:
+  type: ClusterIP
 ```
 
 ## Step 4. -f と --set の併用を試す
@@ -105,9 +108,10 @@ helm get values myapp
 
 結果：
 ```bash
-replicaCount: 4
+USER-SUPPLIED VALUES:
 image:
   tag: 1.27.1-hotfix
+replicaCount: 4
 service:
   type: ClusterIP
 ```
@@ -127,30 +131,76 @@ helm upgrade myapp ./mychart \
 
 ## Step 6. 実際に適用された値を確認
 ```bash
-helm get values myapp --all
+helm get values myapp
 ```
 
 ```yaml
 USER-SUPPLIED VALUES:
-replicaCount: 3
+affinity: {}
+autoscaling:
+  enabled: false
+  maxReplicas: 100
+  minReplicas: 1
+  targetCPUUtilizationPercentage: 80
+fullnameOverride: ""
+httpRoute:
+  annotations: {}
+  enabled: false
+  hostnames:
+  - chart-example.local
+  parentRefs:
+  - name: gateway
+    sectionName: http
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /headers
 image:
+  pullPolicy: IfNotPresent
+  repository: nginx
   tag: 1.27.1-prod
+imagePullSecrets: []
+ingress:
+  annotations: {}
+  className: ""
+  enabled: false
+  hosts:
+  - host: chart-example.local
+    paths:
+    - path: /
+      pathType: ImplementationSpecific
+  tls: []
+livenessProbe:
+  httpGet:
+    path: /
+    port: http
+nameOverride: ""
+nodeSelector: {}
+podAnnotations: {}
+podLabels: {}
+podSecurityContext: {}
+readinessProbe:
+  httpGet:
+    path: /
+    port: http
+replicaCount: 3
+resources: {}
+securityContext: {}
 service:
+  port: 80
   type: LoadBalancer
+serviceAccount:
+  annotations: {}
+  automount: true
+  create: true
+  name: ""
+tolerations: []
+volumeMounts: []
+volumes: []
 ```
 
-## Step 7. 値のスコープ確認
-テンプレート内で .Values.xxx がどのように使われているかを確認します。
-
-例：templates/deployment.yaml
-```yaml
-image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-replicas: {{ .Values.replicaCount }}
-```
-
-.Values の内容は、最終的にマージされた結果が反映されます。
-
-## Step 8. クリーンアップ
+## Step 7. クリーンアップ
 ```bash
 helm uninstall myapp
 ```
