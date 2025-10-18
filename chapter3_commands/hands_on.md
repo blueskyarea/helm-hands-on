@@ -188,7 +188,7 @@ helm get all myapp
 - このReleaseで管理されるリソース情報  
 kind: Deployment、kind: Pod、kind: Service、kind: ConfigMap、kind: Secretなど
 
-片付け
+## Step 8. クリーンアップ
 ```bash
 helm uninstall myapp
 ```
