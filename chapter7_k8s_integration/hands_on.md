@@ -77,23 +77,23 @@ serviceAccount:
 templates/deployment.yaml を編集して関連付け：
 ```yaml
 spec:
-  serviceAccountName: {{ include "mychart.serviceAccountName" . }}
+  serviceAccountName: {{- include "mychart.serviceAccountName" . | quote }}
 ```
 
 _helpers.tpl に関数を追加：
 ```yaml
 {{- define "mychart.serviceAccountName" -}}
-{{- if .Values.serviceAccount.name }}
+{{- if .Values.serviceAccount.name -}}
 {{ .Values.serviceAccount.name }}
-{{- else }}
+{{- else -}}
 {{ printf "%s-sa" .Release.Name }}
-{{- end }}
-{{- end }}
+{{- end -}}
+{{- end -}}
 ```
 
 動作確認：
 ```bash
-helm install myapp ./mychart --set serviceAccount.create=true
+helm upgrade --install myapp ./mychart --set serviceAccount.create=true
 kubectl get sa
 ```
 
@@ -145,12 +145,18 @@ helm history myapp
 REVISION  UPDATED                         STATUS     CHART        DESCRIPTION
 1         2025-10-18 19:20:00.123456 JST deployed   mychart-0.1.0 Install complete
 2         2025-10-18 19:25:43.891234 JST superseded mychart-0.1.0 Upgrade complete
+3         2025-10-18 19:30:22.779123 JST superseded mychart-0.1.0 Upgrade complete
 ```
 
 ロールバック：
 ```bash
 helm rollback myapp 1
 helm history myapp
+```
+
+出力例：
+```yaml
+4       	2025-10-19 15:41:53 2025	deployed  	mychart-0.1.0	1.0     	Rollback to 1
 ```
 
 ✅ Rollback で以前のリリースに即復旧できるのが Helm の強みです。
