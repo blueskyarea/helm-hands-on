@@ -45,8 +45,7 @@ feature:
 ```bash
 helm template ./mychart
 ```
-
-feature: "enabled" の行が出力されれば成功。
+Source: mychart/templates/configmap.yaml 内で feature: "enabled" の行が出力されれば成功。  
 enabled: false にして再実行すると "disabled" に変わります。
 
 ## Step 2. range 構文でループ生成
@@ -60,7 +59,7 @@ users:
 
 templates/configmap.yaml に追記：
 ```yaml
-  users: |
+users: |
   {{- range .Values.users }}
     - {{ . }}
   {{- end }}
@@ -100,26 +99,38 @@ spec:
 
 with により、.Values.app.image を .image で参照可能になります。
 
+出力確認：
+```bash
+helm template ./mychart
+```
+
+結果例： Source: mychart/templates/deployments.yaml 内
+```yaml
+      containers:
+        - name: nginx
+          image: "nginx:1.27.1"
+```
+
 ## Step 4. include による共通パーツ化
-templates/_helpers.tpl に関数を追加：
+templates/_helpers.tpl に関数を追加(更新)：
 ```yaml
 {{- define "mychart.fullname" -}}
 {{ printf "%s-%s" .Release.Name .Chart.Name | trunc 63 | trimSuffix "-" }}
 {{- end }}
 ```
 
-templates/service.yaml を以下に変更：
+出力確認：
+```bash
+helm template ./mychart
+```
+
+結果例：
 ```yaml
+# Source: mychart/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "mychart.fullname" . }}
-spec:
-  type: ClusterIP
-  ports:
-    - port: 80
-  selector:
-    app: {{ .Chart.Name }}
+  name: release-name-mychart
 ```
 
 Helm は _helpers.tpl の中の define を include で呼び出すことができます。
@@ -133,19 +144,19 @@ dynamic:
 
 templates/configmap.yaml に追記：
 ```yaml
+data:
   dynamic_message: {{ tpl .Values.dynamic.message . | quote }}
 ```
 
-確認：
+出力確認：
 ```bash
-helm install myapp ./mychart
-kubectl get configmap myapp-mychart-config -o yaml
+helm template ./mychart
 ```
 
 出力例：
 ```yaml
 data:
-  dynamic_message: "Hello MYAPP"
+  dynamic_message: "Hello RELEASE-NAME"
 ```
 
 tpl により、values.yaml の文字列内にテンプレート式を埋め込むことが可能です。
@@ -153,7 +164,7 @@ tpl により、values.yaml の文字列内にテンプレート式を埋め込�
 ## Step 6. required 関数で必須値を明示
 templates/deployment.yaml の冒頭で必須チェックを追加：
 ```yaml
-{{- $img := required "image.repository is required" .Values.image.repository }}
+{{- $img := required "image.dummy.repository is required" .Values.image.dummy.repository }}
 ```
 
 values.yaml に image.repository がない場合、エラーになります。
@@ -170,10 +181,33 @@ helm template ./mychart
 ## Step 7. Values のスコープ確認
 テンプレート内で .Values の内容を確認：
 ```yaml
-{{- toYaml .Values | indent 2 }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "mychart.fullname" . }}
+  labels:
+    {{- include "mychart.labels" . | nindent 4 }}
 ```
+-> nindent 4
 
 helm template を実行し、Values 全体の構造を可視化して理解します。
+```bash
+helm template ./mychart
+```
+```yaml
+# Source: mychart/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: release-name-mychart
+  labels:
+    helm.sh/chart: mychart-0.1.0
+    app.kubernetes.io/name: mychart
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+-> 4つ分のインデントが自動生成
+```
 
 ## Step 8. クリーンアップ
 ```bash
