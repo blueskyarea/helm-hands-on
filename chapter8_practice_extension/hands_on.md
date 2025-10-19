@@ -20,32 +20,56 @@ Helmfile や CI/CD、署名・検証、Chart テストなど、実運用に即�
 
 ---
 
+### ⚠️ Step 0. Helmfile のインストール（事前準備）
+
+1. Helmfile をインストールします（環境によって方法が異なります）  
+```bash
+# 例：Linux バイナリ版
+wget https://github.com/helmfile/helmfile/releases/download/v0.159.0/helmfile_0.159.0_linux_amd64.tar.gz
+tar -zxvf helmfile_0.159.0_linux_amd64.tar.gz
+sudo mv helmfile /usr/local/bin/
+chmod +x /usr/local/bin/helmfile
+```
+
+インストール後、バージョンを確認します。
+```bash
+helmfile --version
+```
+
 ## Step 1. Helmfile による一括管理
 
 Helmfile は、複数の Helm リリースを一括管理できるツールです。
+1. リポジトリ用ファイルを用意
+```bash
+mkdir -p repo
+helm package ./mychart -d repo/
+helm repo index repo --url http://127.0.0.1:8081
+```
 
-### 📄 `helmfile.yaml` を作成
+2. 簡易HTTPサーバを起動（別ターミナル）
+```bash
+cd repo
+python3 -m http.server 8081
+```
+
+3. `helmfile.yaml` を作成
 ```yaml
 repositories:
   - name: localrepo
-    url: file://./repo
+    url: http://127.0.0.1:8081
 
 releases:
   - name: myapp
     namespace: default
     chart: ./mychart
     values:
-      - values-production.yaml
-  - name: myapp-staging
-    namespace: staging
-    chart: ./mychart
-    values:
-      - values-staging.yaml
+      - values-prod.yaml
 ```
 Helmfile により「複数の環境にまたがる Helm 管理」を YAML で定義できます。
 
 実行
 ```bash
+helmfile repos
 helmfile sync
 ```
 
