@@ -63,7 +63,7 @@ releases:
     namespace: default
     chart: ./mychart
     values:
-      - values-prod.yaml
+      - ./mychart/values-prod.yaml
 ```
 Helmfile により「複数の環境にまたがる Helm 管理」を YAML で定義できます。
 
@@ -76,8 +76,7 @@ helmfile sync
 出力例：
 ```bash
 Building dependency release=myapp
-Upgrading release=myapp in namespace=default
-Upgrading release=myapp-staging in namespace=staging
+Upgrading release=myapp, chart=mychart
 ```
 
 ## Step 2. Hook によるデプロイ前後処理
@@ -101,17 +100,27 @@ spec:
 
 確認：
 ```bash
-helm install myapp ./mychart
+helm upgrade --install myapp ./mychart
+helm get hooks
 ```
 
 出力：
 ```bash
-HOOKS:
----
 # Source: mychart/templates/hooks-job.yaml
 apiVersion: batch/v1
 kind: Job
-...
+metadata:
+  name: myapp-precheck
+  annotations:
+    "helm.sh/hook": pre-install
+spec:
+  template:
+    spec:
+      containers:
+        - name: precheck
+          image: busybox
+          command: ['sh', '-c', 'echo "Pre-install check OK"']
+      restartPolicy: Never
 ```
 
 ✅ helm.sh/hook アノテーションを指定することで、
@@ -141,8 +150,15 @@ helm test myapp
 
 出力例：
 ```bash
-RUNNING: myapp-test-connection
-PASSED: myapp-test-connection
+NAME: myapp
+LAST DEPLOYED: Sun Oct 19 19:17:22 2025
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+TEST SUITE:     myapp-mychart-test-connection
+Last Started:   Sun Oct 19 19:24:07 2025
+Last Completed: Sun Oct 19 19:24:11 2025
+Phase:          Succeeded
 ```
 
 ✅ Chart の品質チェックを自動化する際に利用できます。
